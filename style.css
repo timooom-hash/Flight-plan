@@ -1,0 +1,256 @@
+/* Strips: each plane is a flight progress strip, racked in a dark bay. One look, dark only. */
+
+@font-face { font-family: 'IBM Plex Mono'; font-weight: 500; font-display: swap; src: url(plex-mono-500.woff2) format('woff2'); }
+@font-face { font-family: 'IBM Plex Mono'; font-weight: 600; font-display: swap; src: url(plex-mono-600.woff2) format('woff2'); }
+@font-face { font-family: 'IBM Plex Sans'; font-weight: 500; font-display: swap; src: url(plex-sans-500.woff2) format('woff2'); }
+@font-face { font-family: 'IBM Plex Sans'; font-weight: 600; font-display: swap; src: url(plex-sans-600.woff2) format('woff2'); }
+
+:root {
+  --bay: #232a31;
+  --chrome: #c9ced6;
+  --paper: #f2f3ef;
+  --ink: #1a1d21;
+  --ink-soft: #5f646b;
+  --ink-off: #a0a4aa;
+  --rule: #c9ccc5;
+  --rule-soft: #b5b9b1;
+  --stamp: #b3261e;
+  --green: #2e8b57;
+  --on-green: #ffffff;
+  --yellow: #f2c230;
+  --on-yellow: #1a1d21;
+  --mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+  --sans: 'IBM Plex Sans', -apple-system, system-ui, sans-serif;
+  --gutter: 40px;
+  --gap: 16px;
+  color-scheme: dark;
+  -webkit-text-size-adjust: 100%;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+html, body { height: 100%; margin: 0; }
+
+body {
+  display: flex;
+  flex-direction: column;
+  padding:
+    max(20px, env(safe-area-inset-top))
+    max(var(--gutter), env(safe-area-inset-right))
+    max(28px, env(safe-area-inset-bottom))
+    max(var(--gutter), env(safe-area-inset-left));
+  background: var(--bay);
+  color: var(--chrome);
+  font-family: var(--sans);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
+  overscroll-behavior: none;
+}
+
+/* app.js sets data-screen; until then nothing shows, so a restored plan never flashes the setup. */
+body:not([data-screen]) { visibility: hidden; }
+body[data-screen='setup'] #plan,
+body[data-screen='plan'] #setup { display: none; }
+
+section { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+
+button { font: inherit; color: inherit; cursor: pointer; touch-action: manipulation; }
+button:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+
+.bar { flex: none; height: 44px; display: flex; justify-content: flex-end; }
+
+.icon {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--chrome);
+  display: grid;
+  place-items: center;
+}
+.icon:active { background: rgb(255 255 255 / 0.08); }
+
+/* Setup: one paper sheet on the bay. */
+
+.scroll { flex: 1; min-height: 0; display: flex; overflow-y: auto; padding-bottom: 44px; }
+
+.sheet {
+  width: min(560px, 100%);
+  margin: auto;
+  padding: 24px 36px 36px;
+  display: flex;
+  flex-direction: column;
+  border-radius: 4px;
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 0 2px 0 rgb(0 0 0 / 0.35), 0 12px 32px rgb(0 0 0 / 0.3);
+}
+
+.setting {
+  min-height: 64px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 20px;
+  font-weight: 500;
+}
+.setting + .setting { box-shadow: inset 0 1px 0 var(--rule); }
+.setting > span { flex: 1; }
+
+.stepper { display: flex; border: 1.5px solid var(--ink); border-radius: 3px; }
+.stepper button {
+  width: 46px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  display: grid;
+  place-items: center;
+}
+.stepper button:active { background: rgb(0 0 0 / 0.06); }
+.stepper button:disabled { color: var(--ink-off); background: none; cursor: default; }
+.stepper output {
+  width: 58px;
+  display: grid;
+  place-items: center;
+  border-inline: 1.5px solid var(--ink);
+  font: 600 22px var(--mono);
+}
+
+hr { height: 2px; margin: 10px 0; border: 0; background: var(--ink); }
+
+.switch { width: 100%; padding: 0; border: 0; background: none; text-align: left; }
+.switch::after {
+  content: '';
+  flex: none;
+  width: 30px;
+  height: 30px;
+  margin-left: auto;
+  border: 2px solid var(--ink);
+  border-radius: 3px;
+}
+.switch[aria-checked='true']::after {
+  background: var(--ink) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23f2f3ef' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E") center / 20px no-repeat;
+}
+.switch:active { background: rgb(0 0 0 / 0.04); }
+
+.generate {
+  height: 60px;
+  margin-top: 28px;
+  border: 0;
+  border-radius: 4px;
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 20px;
+  font-weight: 600;
+}
+.generate:active { transform: translateY(1px); }
+
+/* Plan: landscape racks planes 1–6 left and 7–12 right; portrait stacks them with a wider gap after plane 6. */
+
+.bay {
+  flex: 1;
+  min-height: 0;
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: 1fr;
+  gap: 28px;
+  overflow-y: auto;
+}
+.bay ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-rows: repeat(6, minmax(64px, 1fr));
+  gap: var(--gap);
+}
+@media (orientation: portrait) {
+  .bay { grid-template-columns: minmax(0, 1fr); grid-template-rows: 1fr 1fr; gap: 32px; }
+  .bay ol { gap: 12px; }
+}
+
+/* A strip scales with its own height (cqh), capped by its width (cqw) on narrow screens. */
+.strip {
+  container-type: size;
+  overflow: hidden;
+  border-radius: 3px;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--mono);
+  box-shadow: 0 1px 0 rgb(0 0 0 / 0.45), 0 4px 10px rgb(0 0 0 / 0.22);
+}
+.strip > div { height: 100%; display: grid; grid-template-columns: 81cqh repeat(2, minmax(0, 1fr)); }
+.has-alternate .strip > div { grid-template-columns: 81cqh repeat(3, minmax(0, 1fr)); }
+.has-stamps .strip > div { grid-template-columns: 81cqh repeat(2, minmax(0, 1fr)) 62cqh; }
+.has-alternate.has-stamps .strip > div { grid-template-columns: 81cqh repeat(3, minmax(0, 1fr)) 62cqh; }
+
+.tab { display: grid; place-items: center; font-size: min(42cqh, 9cqw); font-weight: 600; }
+.tab.green { background: var(--green); color: var(--on-green); }
+.tab.yellow { background: var(--yellow); color: var(--on-yellow); }
+
+.fix {
+  min-width: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2cqh;
+  padding-left: 15cqh;
+  border-left: 1.5px solid var(--rule);
+  white-space: nowrap;
+}
+.tab + .fix { border-left: 0; }
+.fix.alternate { border-left: 1.5px dashed var(--rule-soft); color: var(--ink-soft); }
+.point { font-size: min(20cqh, 5.4cqw); font-weight: 600; letter-spacing: 0.02em; line-height: 1.2; }
+.level { font-size: min(29cqh, 7.6cqw); font-weight: 500; line-height: 1.1; }
+
+.stamps {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6cqh;
+  border-left: 1.5px solid var(--rule);
+}
+.stamp {
+  padding: 0.38em 0.46em;
+  border: 1.5px solid;
+  border-radius: 3px;
+  color: var(--stamp);
+  font-size: max(10px, min(12.5cqh, 3cqw));
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  line-height: 1;
+}
+
+/* Long, low strips (iPad portrait): point and level share a line, so everything can be larger. */
+@container (min-aspect-ratio: 8 / 1) {
+  .has-stamps .strip > div { grid-template-columns: 81cqh repeat(2, minmax(0, 1fr)) 120cqh; }
+  .has-alternate.has-stamps .strip > div { grid-template-columns: 81cqh repeat(3, minmax(0, 1fr)) 120cqh; }
+  .tab { font-size: 55cqh; }
+  .fix { flex-flow: row wrap; justify-content: flex-start; align-content: center; align-items: baseline; column-gap: 0.4em; }
+  .point { font-size: 34cqh; }
+  .level { font-size: 44cqh; }
+  /* An invisible level-sized character, so AIRPORT sits on the same baseline as its neighbours. */
+  .fix::after { content: '\200b'; font-size: 44cqh; line-height: 1.1; }
+  .stamp { font-size: 17cqh; }
+}
+
+/* A fresh plan racks in, strip by strip. */
+@media (prefers-reduced-motion: no-preference) {
+  .fresh .strip { animation: rack 0.28s cubic-bezier(0.2, 0.7, 0.2, 1) calc(var(--i) * 30ms) both; }
+}
+@keyframes rack { from { opacity: 0; transform: translateX(-24px); } }
+
+@media (max-width: 600px) {
+  :root { --gutter: 16px; --gap: 10px; }
+  .sheet { padding: 12px 20px 24px; }
+  .setting { font-size: 18px; }
+}
