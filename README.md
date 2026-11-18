@@ -1,6 +1,6 @@
 # Flight Plan
 
-Randomizes the flight plan for 12 planes: a callsign, an entry and an exit with flight levels, and optionally a fast plane, a VIP, the airport and an alternate. It runs from the iPad home screen and works offline.
+Randomizes the flight plan for 12 planes: a callsign, an entry and an exit with flight levels, and optionally a fast plane, a VIP, the airport and an alternate. On the plan, tapping a waypoint turns it over, and tapping it again turns it back. It runs from the iPad home screen and works offline.
 
 ## Put it on the iPad
 
@@ -9,7 +9,9 @@ Randomizes the flight plan for 12 planes: a callsign, an entry and an exit with 
 3. Once it is published, open `https://<your-user>.github.io/<repository>/` in Safari on the iPad.
 4. Share → Add to Home Screen, keep Open as Web App on, and tap Add.
 
-After the first launch it works without a connection. Settings and the last plan are kept on the iPad.
+After the first launch it works without a connection. Settings, the last plan and its turned-over waypoints are kept on the iPad.
+
+To update it later, upload the changed files the same way. The iPad picks them up the next time the app opens with a connection.
 
 ## How it decides
 
@@ -29,7 +31,7 @@ There is no build step and there are no dependencies.
 | File | Job |
 | --- | --- |
 | `plan.js` | Every rule. Pure functions, no DOM. |
-| `app.js` | Renders both screens, handles taps, remembers settings and the last plan. |
+| `app.js` | Renders both screens, handles taps, remembers settings, the last plan and its flips. |
 | `index.html` | Markup for both screens. |
 | `style.css` | The look. |
 | `sw.js` | Offline: the newest files when online, the last ones offline. |

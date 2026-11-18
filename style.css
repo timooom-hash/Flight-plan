@@ -14,6 +14,7 @@
   --ink-off: #a0a4aa;
   --rule: #c9ccc5;
   --rule-soft: #b5b9b1;
+  --back: #c3c6bf;
   --stamp: #b3261e;
   --green: #2e8b57;
   --on-green: #ffffff;
@@ -195,19 +196,34 @@ hr { height: 2px; margin: 10px 0; border: 0; background: var(--ink); }
 .tab.green { background: var(--green); color: var(--on-green); }
 .tab.yellow { background: var(--yellow); color: var(--on-yellow); }
 
+/* Each fix is a card. A tap turns it over to its blank back; another tap turns it face up again. */
 .fix {
+  position: relative;
   min-width: 0;
+  padding: 0;
+  border: 0;
+  border-left: 1.5px solid var(--rule);
+  border-radius: 0;
+  background: none;
+  text-align: left;
+  perspective: 600px;
+}
+.fix:focus-visible { outline-offset: -4px; }
+.tab + .fix { border-left: 0; }
+.fix.alternate { border-left: 1.5px dashed var(--rule-soft); color: var(--ink-soft); }
+.face { position: absolute; inset: 0; -webkit-backface-visibility: hidden; backface-visibility: hidden; }
+.front {
   overflow: hidden;
   display: flex;
   flex-direction: column;
   justify-content: center;
   gap: 2cqh;
   padding-left: 15cqh;
-  border-left: 1.5px solid var(--rule);
   white-space: nowrap;
 }
-.tab + .fix { border-left: 0; }
-.fix.alternate { border-left: 1.5px dashed var(--rule-soft); color: var(--ink-soft); }
+.back { background: var(--back); transform: rotateY(-180deg); }
+.fix[aria-pressed='true'] .front { transform: rotateY(180deg); }
+.fix[aria-pressed='true'] .back { transform: rotateY(0deg); }
 .point { font-size: min(20cqh, 5.4cqw); font-weight: 600; letter-spacing: 0.02em; line-height: 1.2; }
 .level { font-size: min(29cqh, 7.6cqw); font-weight: 500; line-height: 1.1; }
 
@@ -235,17 +251,18 @@ hr { height: 2px; margin: 10px 0; border: 0; background: var(--ink); }
   .has-stamps .strip > div { grid-template-columns: 81cqh repeat(2, minmax(0, 1fr)) 120cqh; }
   .has-alternate.has-stamps .strip > div { grid-template-columns: 81cqh repeat(3, minmax(0, 1fr)) 120cqh; }
   .tab { font-size: 55cqh; }
-  .fix { flex-flow: row wrap; justify-content: flex-start; align-content: center; align-items: baseline; column-gap: 0.4em; }
+  .front { flex-flow: row wrap; justify-content: flex-start; align-content: center; align-items: baseline; column-gap: 0.4em; }
   .point { font-size: 34cqh; }
   .level { font-size: 44cqh; }
   /* An invisible level-sized character, so AIRPORT sits on the same baseline as its neighbours. */
-  .fix::after { content: '\200b'; font-size: 44cqh; line-height: 1.1; }
+  .front::after { content: '\200b'; font-size: 44cqh; line-height: 1.1; }
   .stamp { font-size: 17cqh; }
 }
 
-/* A fresh plan racks in, strip by strip. */
+/* A fresh plan racks in, strip by strip, and a tapped fix turns over. */
 @media (prefers-reduced-motion: no-preference) {
   .fresh .strip { animation: rack 0.28s cubic-bezier(0.2, 0.7, 0.2, 1) calc(var(--i) * 30ms) both; }
+  .face { transition: transform 0.4s cubic-bezier(0.3, 0.6, 0.2, 1); }
 }
 @keyframes rack { from { opacity: 0; transform: translateX(-24px); } }
 

@@ -1,4 +1,4 @@
-// The UI: renders the two screens, handles taps, and remembers settings and the last plan.
+// The UI: renders the two screens, handles taps, and remembers settings, the last plan and its flipped fixes.
 // Every rule lives in plan.js.
 import { AIRPORT, DEFAULTS, FIRST, PLANES, generate, limits, ranges, step } from './plan.js';
 
@@ -14,14 +14,27 @@ navigator.serviceWorker?.register('sw.js').catch(() => {});
 document.addEventListener('click', event => {
   const button = event.target.closest('button');
   if (!button || button.disabled) return;
+  if (button.dataset.fix) return flip(button);
   const { action, limit, delta, module } = button.dataset;
   if (limit) state.settings = step(state.settings, limit, Number(delta));
   if (module) state.settings = { ...state.settings, [module]: !state.settings[module] };
-  if (action === 'generate') state.plan = generate(state.settings);
+  if (action === 'generate') {
+    state.plan = generate(state.settings);
+    state.flipped = [];
+  }
   if (action) state.screen = action === 'setup' ? 'setup' : 'plan';
   save();
   render(action === 'generate');
 });
+
+// Only the tapped fix changes, so its turn can animate.
+function flip(button) {
+  const key = button.dataset.fix;
+  const flipped = !state.flipped.includes(key);
+  state.flipped = flipped ? [...state.flipped, key] : state.flipped.filter(k => k !== key);
+  button.setAttribute('aria-pressed', flipped);
+  save();
+}
 
 function render(fresh = false) {
   const { settings, plan, screen } = state;
@@ -52,25 +65,26 @@ function renderPlan(plan, fresh) {
 
 function strip(p, index, stamps) {
   const { color, number } = p.callsign;
-  const spoken = [`${color === 'green' ? 'Green' : 'Yellow'} ${number}: ${say(p.entry)} to ${say(p.exit)}`];
-  if (p.alternate) spoken.push(`alternate ${say(p.alternate)}`);
-  if (p.fast) spoken.push('fast');
-  if (p.vip) spoken.push('VIP');
+  const kinds = p.alternate ? ['entry', 'exit', 'alternate'] : ['entry', 'exit'];
   return `
-    <li class="strip" style="--i: ${index}" aria-label="${spoken.join(', ')}">
-      <div aria-hidden="true">
-        <span class="tab ${color}">${number}</span>
-        ${fix(p.entry, 'entry')}
-        ${fix(p.exit, 'exit')}
-        ${p.alternate ? fix(p.alternate, 'alternate') : ''}
+    <li class="strip" style="--i: ${index}">
+      <div>
+        <span class="tab ${color}" role="img" aria-label="${color === 'green' ? 'Green' : 'Yellow'} ${number}">${number}</span>
+        ${kinds.map(kind => fix(p[kind], kind, `${index}:${kind}`)).join('')}
         ${stamps ? `<span class="stamps">${p.fast ? '<span class="stamp">FAST</span>' : ''}${p.vip ? '<span class="stamp">VIP</span>' : ''}</span>` : ''}
       </div>
     </li>`;
 }
 
-function fix({ point, level }, kind) {
+// A fix is a card: its front shows the point and level, its back is blank.
+function fix({ point, level }, kind, key) {
   const name = point === AIRPORT ? 'AIRPORT' : point;
-  return `<span class="fix ${kind}"><span class="point">${name}</span>${level === null ? '' : `<span class="level">${level}</span>`}</span>`;
+  const label = `${kind[0].toUpperCase()}${kind.slice(1)} ${say({ point, level })}`;
+  return `
+    <button class="fix ${kind}" data-fix="${key}" aria-pressed="${state.flipped.includes(key)}" aria-label="${label}">
+      <span class="face front"><span class="point">${name}</span>${level === null ? '' : `<span class="level">${level}</span>`}</span>
+      <span class="face back"></span>
+    </button>`;
 }
 
 function say({ point, level }) {
@@ -78,14 +92,15 @@ function say({ point, level }) {
 }
 
 function load() {
-  const start = { settings: { ...DEFAULTS }, plan: null, screen: 'setup' };
+  const start = { settings: { ...DEFAULTS }, plan: null, flipped: [], screen: 'setup' };
   try {
     const saved = JSON.parse(localStorage.getItem(KEY));
     if (!saved) return start;
     const settings = { ...DEFAULTS, ...saved.settings };
     for (const key of LIMITS) settings[key] ??= Infinity; // JSON stores Infinity as null
     const plan = Array.isArray(saved.plan) && saved.plan.length === PLANES ? saved.plan : null;
-    return { settings, plan, screen: plan && saved.screen === 'plan' ? 'plan' : 'setup' };
+    const flipped = plan && Array.isArray(saved.flipped) ? saved.flipped : [];
+    return { settings, plan, flipped, screen: plan && saved.screen === 'plan' ? 'plan' : 'setup' };
   } catch {
     return start;
   }
